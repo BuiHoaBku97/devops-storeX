@@ -3,16 +3,21 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: store-x-service-container
+    image: store-x-service:latest
+    container_name: store-x-service
     ports:
       - "8888:8888"
     environment:
       DB_URL: jdbc:postgresql://store-x-db:5432/store-x-db
       DB_USERNAME: postgres
       DB_PASSWORD: postgres
+      REDIS_HOST: store-x-redis
+      REDIS_PORT: 6379
     restart: unless-stopped
     depends_on:
       store-x-db:
+        condition: service_healthy
+      store-x-redis:
         condition: service_healthy
 
   store-x-db:
@@ -33,5 +38,24 @@ services:
       timeout: 5s
       retries: 5
 
+  store-x-redis:
+    image: redis:7-alpine
+    container_name: store-x-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - store-x-redis-data:/data
+
+    # Healthcheck for Redis
+    # Sử dụng lệnh terminal "redis-cli ping" để kiểm tra tình trạng của Redis.
+    # Nếu Redis trả về "PONG", nó được coi là khỏe mạnh.
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 volumes:
   store-x-db-data:
+  store-x-redis-data:
