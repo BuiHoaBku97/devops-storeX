@@ -8,28 +8,30 @@ services:
     ports:
       - "8888:8888"
     environment:
-      DB_URL: jdbc:postgresql://store-x-db:5432/store-x-db
-      DB_USERNAME: postgres
-      DB_PASSWORD: postgres
-      REDIS_HOST: store-x-redis
-      REDIS_PORT: 6379
+      - DB_URL=${DB_URL}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
     restart: unless-stopped
     depends_on:
       store-x-db:
         condition: service_healthy
       store-x-redis:
         condition: service_healthy
+    networks:
+      - storex-net
 
   store-x-db:
     image: postgres:17-alpine
     container_name: store-x-db-container
     restart: unless-stopped
     environment:
-      POSTGRES_DB: store-x-db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      - POSTGRES_DB=store-x-db
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     ports:
-      - "5432:5432"
+      - "${PORT}:${PORT}"
     volumes:
       - store-x-db-data:/var/lib/postgresql/data
     healthcheck:
@@ -37,6 +39,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - storex-net
 
   store-x-redis:
     image: redis:7-alpine
@@ -55,7 +59,14 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - storex-net
 
 volumes:
   store-x-db-data:
   store-x-redis-data:
+
+networks:
+  storex-net:
+    name: storex-net
+    driver: bridge
