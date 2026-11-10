@@ -1,0 +1,25 @@
+# Build schema
+FROM eclipse-temurin:17-jdk-alpine as build
+WORKDIR /app
+
+COPY gradlew .
+COPY gradle ./gradle
+COPY settings.gradle build.gradle ./
+
+RUN chmod +x gradlew
+
+RUN ./gradlew dependencies --no-daemon
+
+COPY src ./src
+RUN ./gradlew bootJar -x test --no-daemon
+
+# Run schema
+FROM eclipse-temurin:17-jre-alpine
+WORKDIR /app
+COPY --from=build /app/build/libs/*.jar app.jar
+
+RUN addgroup -S spring && adduser -S spring -G spring
+USER spring:spring
+
+EXPOSE 8888
+ENTRYPOINT ["sh", "-c", "java -jar app.jar"]

@@ -1,0 +1,37 @@
+services:
+  store-x-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: store-x-service-container
+    ports:
+      - "8888:8888"
+    environment:
+      DB_URL: jdbc:postgresql://store-x-db:5432/store-x-db
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+    restart: unless-stopped
+    depends_on:
+      store-x-db:
+        condition: service_healthy
+
+  store-x-db:
+    image: postgres:17-alpine
+    container_name: store-x-db-container
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: store-x-db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - store-x-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d store-x-db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  store-x-db-data:
